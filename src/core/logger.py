@@ -1,13 +1,10 @@
-import datetime
-
 import logging
 import logging.config as lconfig
-
 from typing import Any
 
-from core.config import settings
-
-LOG_FORMAT = "%(asctime)s:%(name)s:%(levelname)s:%(module)s:%(funcName)s:%(message)s"
+LOG_FORMAT = (
+    "%(asctime)s:%(name)s:%(levelname)s:" "%(module)s:%(funcName)s:%(message)s"
+)  # flake8: noqa
 LOG_DEFAULT_HANDLERS = ["console", "file"]
 LOG_LEVEL = "DEBUG"
 
@@ -60,7 +57,7 @@ def get_logging_config(
                 "formatter": "verbose",
                 "class": "logging.handlers.RotatingFileHandler",
                 "filename": "error.log",
-                "mode": "a"
+                "mode": "a",
             },
         },
         "loggers": {

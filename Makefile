@@ -3,4 +3,3 @@ up:
 
 down:
 	docker compose -f notification.local.yml --profile notification down
-

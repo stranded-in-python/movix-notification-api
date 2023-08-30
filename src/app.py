@@ -5,7 +5,6 @@ from api.v1 import notification
 from core.config import settings
 from core.logger import logger
 
-
 logger()
 
 app = FastAPI(
@@ -15,4 +14,6 @@ app = FastAPI(
     default_response_class=ORJSONResponse,
 )
 
-app.include_router(notification.router, prefix="/api/v1/notification", tags=["notification"])
+app.include_router(
+    notification.router, prefix="/api/v1/notification", tags=["notification"]
+)

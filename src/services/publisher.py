@@ -1,17 +1,15 @@
 import functools
-import aio_pika
-from aio_pika import ExchangeType
 
-from core.logger import logger
+import aio_pika
+
 from core.config import PublisherProperties, publisher_properties
+from core.logger import logger
 
 LOGGER = logger()
 
+
 class RabbitMQPublisher:
-    def __init__(
-        self,
-        properties: PublisherProperties = publisher_properties
-    ):
+    def __init__(self, properties: PublisherProperties = publisher_properties):
         """Setup the publisher object, passing in the URL we will use
         to connect to RabbitMQ.
 
@@ -28,7 +26,7 @@ class RabbitMQPublisher:
 
         self._stopping = False
         self._url = properties.amqp_url
-        
+
         self.EXCHANGE = properties.exchange
         self.EXCHANGE_TYPE = properties.exchange_type
         self.PUBLISH_INTERVAL = properties.publish_interval
@@ -43,7 +41,7 @@ class RabbitMQPublisher:
         :rtype: pika.SelectConnection
 
         """
-        LOGGER.info('Connecting to %s', self._url)
+        LOGGER.info("Connecting to %s", self._url)
         self._connection = await aio_pika.connect_robust(self._url)
 
     async def open_channel(self):
@@ -53,24 +51,24 @@ class RabbitMQPublisher:
         will be invoked.
 
         """
-        LOGGER.info('Creating a new channel')
+        LOGGER.info("Creating a new channel")
         self._channel = await self._connection.channel()
-
 
     async def publish_message(self, message: str, hdrs: dict | None = None):
         if self._connection is None:
             await self.connect()
 
         await self.open_channel()
-        
+
         exchange = await self._channel.get_exchange(
             self.EXCHANGE,
         )
         await exchange.publish(
-            aio_pika.Message(bytes(message, encoding='utf8')),
+            aio_pika.Message(bytes(message, encoding="utf8")),
             routing_key=self.ROUTING_KEY,
             timeout=5.0,
         )
+
 
 @functools.lru_cache
 def get_publisher() -> RabbitMQPublisher:
