@@ -1,4 +1,5 @@
 import os
+from uuid import UUID
 
 from pydantic import BaseSettings
 
@@ -21,5 +22,13 @@ class PublisherProperties(BaseSettings):
     routing_key: str = "notification.email"
 
 
+class EventsProperties(BaseSettings):
+    on_registration_id: UUID = ""
+    on_registration_vars: list[str] = [""]
+    on_registration_send_from: str = "welcom@movix.ru"
+    on_registration_subject: str = "Confirm you email"
+
+
 settings = Settings()
 publisher_properties = PublisherProperties()
+events_properties = EventsProperties()
