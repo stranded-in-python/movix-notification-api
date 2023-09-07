@@ -29,6 +29,12 @@ class EventsProperties(BaseSettings):
     on_registration_subject: str = "Confirm you email"
 
 
+class UsersProperties(BaseSettings):
+    url_get_users_channels: str = "http://localhost:8000/api/v1/notifications/channels"
+    url_verify: str = "http://localhost:8000/api/v1/auth/verify"
+
+
 settings = Settings()
 publisher_properties = PublisherProperties()
 events_properties = EventsProperties()
+user_propertis = UsersProperties()

@@ -1,4 +1,6 @@
-from core.config import events_properties
+import orjson
+
+from core.config import events_properties, user_propertis
 from core.exceptions import EventNameError
 from models.events import UserOnRegistration
 from models.queue import EmailTitle, Message, MessageType
@@ -37,8 +39,11 @@ class EventService:
                 raise EventNameError
 
     def _on_registration_context(self, user: UserOnRegistration):
-        # Что делаем? Какой шаблон?
-        return user
+        context = {
+            "verefy_url": user_propertis.url_verify,
+            "verification_token": user.verification_token,
+        }
+        return orjson.dumps(context)
 
     def _get_message_recipients(self, event_name, *args):
         match event_name:

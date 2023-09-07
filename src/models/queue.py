@@ -21,7 +21,7 @@ class EmailTitle(BaseModel):
 class Message(BaseModel):
     context: dict
     template_id: UUID
-    type_: MessageType
+    type: MessageType
     recipients: EmailTitle
 
     @root_validator

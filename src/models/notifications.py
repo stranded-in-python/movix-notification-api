@@ -1,17 +1,23 @@
+from enum import Enum
+from uuid import UUID
+
 from pydantic import BaseModel
 
 from models.mixins import UUIDMixin
 
 
-class NotificationPayload(BaseModel):
-    mime_type: str
-    message: str
+class NotificationChannels(str, Enum):
+    email: "email"
 
 
-class NotificationRecipients(BaseModel):
-    email: list[str]
+class NotificationRecipient(BaseModel):
+    id: UUID
+    channel: NotificationChannels
+    address: str
 
 
 class Notification(UUIDMixin):
-    payload: NotificationPayload
-    recipients: NotificationRecipients
+    template: UUID
+    channels: list[NotificationChannels]
+    context: dict
+    cron_str: str
