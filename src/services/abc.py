@@ -1,6 +1,7 @@
 from abc import ABC
 
-from models.users import UserSettings
+from db.notifications import BaseNotificationDatabase
+from models.users import UserChannels
 
 
 class QueueABC(ABC):
@@ -8,13 +9,15 @@ class QueueABC(ABC):
         ...
 
 
-class NotificationServiceABC(ABC):
-    queue: QueueABC
-
-    def send_message():
+class UserServiceABC(ABC, UserChannels):
+    async def get_users_channels() -> list[UserChannels]:
         ...
 
 
-class UserServiceABC(ABC, UserSettings):
-    async def get_users_settings() -> list[UserSettings]:
+class NotificationServiceABC(ABC):
+    queue: QueueABC
+    notification_db: BaseNotificationDatabase
+    user_service: UserServiceABC
+
+    def send_message():
         ...

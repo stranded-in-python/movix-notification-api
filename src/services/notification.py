@@ -1,23 +1,30 @@
-from functools import lru_cache
+from typing import AsyncGenerator
+from uuid import UUID
 
-# from core.config import settings
-from models.notifications import Notification, NotificationRecipient
+from core.config import user_propertis
+from db.notifications import SANotificationDB
+from models.notifications import Notification
+from services.user import UserService
 
 from .abc import NotificationServiceABC
 
 
 class NotificationService(NotificationServiceABC):
-    def send_message():
-        ...
+    notification_db: SANotificationDB
+    user_service: UserService
 
-    def get_notification(nitification_id) -> Notification:
-        ...
+    async def get_notification(self, notification_id) -> Notification | None:
+        return await self.notification_db.get_notification(notification_id)
 
-    def get_notification_users(nitification_id, offset) -> list[NotificationRecipient]:
-        # limit = settings.users_limit
-        ...
+    async def get_notification_users(
+        self, notification_id, offset
+    ) -> AsyncGenerator[list[UUID], None]:
+        async for users_ids in self.notification_db.get_notification_users_generator(
+            notification_id=notification_id,
+            users_limit=user_propertis.users_limit,
+        ):
+            yield users_ids
 
 
-@lru_cache
 def get_notification_service() -> NotificationService:
     return NotificationService()

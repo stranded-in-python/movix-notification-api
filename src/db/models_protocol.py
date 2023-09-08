@@ -15,7 +15,7 @@ class NotifiacationProtocol(Protocol[ID]):
     id: ID
     template_id: UUID
     channels: list[str]
-    users: list[ID]
+    context: dict
 
 
 class TemplateProtocol(Protocol[ID]):

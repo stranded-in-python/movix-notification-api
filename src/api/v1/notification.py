@@ -42,24 +42,25 @@ async def generate_notifiaction(
     publisher: RabbitMQPublisher = Depends(get_publisher),
 ) -> None:
     # Получить данные уведомления
-    # notification = notification_service.get_notification(id_notification)
+    notification = await notification_service.get_notification(id_notification)
 
-    # Получить пачку пользователей
-    user_list_is_empty = False
+    async for users_ids in notification_service.get_notification_users(id_notification):
+        users_channels = await user_service.get_users_channels(users_ids)
 
-    while not user_list_is_empty:
-        offset = 0
-        user_ids, offset = notification_service.get_users(id_notification, offset)
+        for channel_type in notification.channels:
+            recipients = [
+                user_channels.channels
+                for user_channels in users_channels
+                for channel in user_channels.channels
+                if channel.type == channel_type
+            ]
 
-        # Получить настройи уведомлений
-        # user_settings = user_service.get_users_settings(user_ids)
+            # сформировать Message
+            message = Message(
+                context=notification.context,
+                template_id=notification.template_id,
+                type=channel_type,
+                recipients=recipients,
+            )
 
-        # Для каждого канала
-        # for channel in
-        #     # сформировать Message
-        #     message = Message(
-        #         context=notification.context,
-        #         template_id=notification.template_id,
-        #         type=notification., # Откуда берётся тип уведомления
-        # )
-        # Отправить в очередь
+            await publisher.publish_message(message.json())

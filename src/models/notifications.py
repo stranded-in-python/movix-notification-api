@@ -17,7 +17,6 @@ class NotificationRecipient(BaseModel):
 
 
 class Notification(UUIDMixin):
-    template: UUID
+    template_id: UUID
     channels: list[NotificationChannels]
     context: dict
-    cron_str: str
