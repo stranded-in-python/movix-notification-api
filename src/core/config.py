@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseSettings
 
-from core.logger import get_logging_config
+from core.logger import LOG_LEVEL, get_logging_config
 
 
 class Settings(BaseSettings):
@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     pgpassword: str = "qweasd123"
     database_adapter: str = "postgresql"
     database_sqlalchemy_adapter: str = "postgresql+asyncpg"
+
+    log_level: str = LOG_LEVEL
 
     pack_size: int = 1000
 
@@ -37,7 +39,7 @@ class PublisherProperties(BaseSettings):
 
 
 class EventsProperties(BaseSettings):
-    on_registration_id: UUID = ""
+    on_registration_template_id: UUID = UUID(int=0)
     on_registration_vars: list[str] = [""]
     on_registration_send_from: str = "welcom@movix.ru"
     on_registration_subject: str = "Confirm you email"

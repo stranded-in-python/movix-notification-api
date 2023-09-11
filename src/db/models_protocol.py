@@ -25,7 +25,7 @@ class TemplateProtocol(Protocol[ID]):
     body: bytes
 
 
-class TemlateContextProtocol(TemplateProtocol):
+class TemlateContextProtocol(TemplateProtocol[ID]):
     varibles: list[str]
 
 
