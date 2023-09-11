@@ -34,7 +34,7 @@ class UserService(UserServiceABC):
             HTTPError: If the request fails with a non-200 status code.
         """
         url = user_propertis.url_get_users_channels
-        response = await self.client.post(url, json=orjson.dumps(user_ids))
+        response = await self.client.post(url, data=orjson.dumps(user_ids))
         if response.status_code == 200:
             return response.json()
 
