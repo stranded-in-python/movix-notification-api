@@ -7,7 +7,7 @@ from models.mixins import UUIDMixin
 
 
 class NotificationChannels(str, Enum):
-    email: "email"
+    email = "email"
 
 
 class NotificationRecipient(BaseModel):

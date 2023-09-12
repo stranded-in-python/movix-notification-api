@@ -1,12 +1,15 @@
+import uuid
 from uuid import UUID
 
 import httpx
 import orjson
 
-from core.config import user_propertis
+from core.config import authorization_data, user_propertis
 from core.logger import logger
 from models.users import NotificationChannel, UserChannels
 from services.abc import UserServiceABC
+
+LOGGER = logger()
 
 
 class UserService(UserServiceABC):
@@ -34,7 +37,17 @@ class UserService(UserServiceABC):
             HTTPError: If the request fails with a non-200 status code.
         """
         url = user_propertis.url_get_users_channels
-        response = await self.client.post(url, data=orjson.dumps(user_ids))
+        access_token = await self._get_access_token()
+        print(access_token)
+        headers = {
+            'Content-Type': "application/json",
+            'X-Request-Id': str(uuid.uuid4()),
+            'Authorization': f'Bearer {access_token}',
+        }
+        request = httpx.Request(
+            'GET', url, content=orjson.dumps(user_ids), headers=headers
+        )
+        response = await self.client.send(request=request)
         if response.status_code == 200:
             return response.json()
 
@@ -71,6 +84,47 @@ class UserService(UserServiceABC):
 
         return users_channels
 
+    async def _get_access_token(self) -> str | None:
+        refresh_token = await self._get_refresh_token()
+
+        url = user_propertis.url_refresh_token
+        headers = {
+            'X-Request-Id': str(uuid.uuid4()),
+            'Authorization': f'Bearer {refresh_token}',
+        }
+        request = httpx.Request('POST', url, headers=headers)
+        response = await self.client.send(request=request)
+        LOGGER.info(response.status_code)
+        if response.status_code == 200:
+            access_token = response.json()['access_token']
+            await self._set_access_token(access_token)
+            return access_token
+        response.raise_for_status()
+
+    async def _get_refresh_token(self) -> str | None:
+
+        url = user_propertis.url_login
+        headers = {
+            # 'Content-Type': "multipart/form-data",
+            'X-Request-Id': str(uuid.uuid4())
+        }
+        data = {
+            "username": user_propertis.username,
+            "password": user_propertis.password,
+        }
+        response = await self.client.post(url=url, headers=headers, data=data)
+        if response.status_code == 200:
+            refresh_token = response.json()['refresh_token']
+            await self._set_refresh_token(refresh_token)
+            return refresh_token
+        response.raise_for_status()
+
+    async def _set_access_token(self, access_token):
+        authorization_data['access_token'] = access_token
+
+    async def _set_refresh_token(self, refresh_token):
+        authorization_data['refresh_token'] = refresh_token
+
 
 async def get_user_service() -> UserService:
-    yield UserService(httpx.AsyncClient)
+    yield UserService(httpx.AsyncClient())

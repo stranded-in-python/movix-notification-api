@@ -76,7 +76,8 @@ class SANotificationDB(BaseNotificationDatabase[UUID, Notification]):
         self, notification_id: UUID, users_limit: int
     ) -> AsyncGenerator[list[UUID], None]:
         """Get a notification users"""
-        query_text = """
+        query_text = text(
+            """
         WITH notification_data AS (
             SELECT recipients_id
             FROM notifications.notification
@@ -85,9 +86,9 @@ class SANotificationDB(BaseNotificationDatabase[UUID, Notification]):
         SELECT user_group_membership.user_id
         FROM notification_data
         INNER JOIN notifications.user_group_membership
-        ON notification_data.recipients_id = user_group_membership.group_id
-        ORDER BY user_group_membership.user_id;
+        ON notification_data.recipients_id = user_group_membership.group_id;
         """
+        )
         query_params = {"notification_id": notification_id}
 
         result = await self.session.execute(query_text, query_params)
@@ -96,7 +97,7 @@ class SANotificationDB(BaseNotificationDatabase[UUID, Notification]):
         while result_not_empty:
             users_ids = []
 
-            while len(users_ids) < users_limit or result_not_empty:
+            while result_not_empty and len(users_ids) < users_limit:
 
                 rows = result.fetchmany(self.pack_size)
                 if len(rows) == 0:
