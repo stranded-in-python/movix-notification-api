@@ -1,0 +1,23 @@
+version: "3.8"
+
+volumes:
+  redis_data_local: {}
+
+services:
+  rabitmq:
+    image: rabbitmq:3.12.3-management-alpine
+    ports:
+      - 15672:15672
+      - 5672:5672
+    profiles:
+      - "all"
+      - "notification"
+
+  redis:
+    image: redis:7.2-rc-bullseye
+    volumes:
+      - redis_data_local:/data
+    ports:
+      - "6379:6379"
+    profiles:
+      - "notification"
