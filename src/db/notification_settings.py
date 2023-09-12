@@ -1,9 +1,12 @@
-from typing import Any
+from typing import Any, AsyncGenerator
 from uuid import UUID
 
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import Depends
+from sqlalchemy.ext.asyncio import async_sessionmaker  # noqa
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine  # noqa
 
 from .abc import NotificationSettingsChannelDBABC, NotificationSettingsDBABC
+from core.config import get_database_url_async
 
 class NotificationSettingsChannelPSQL(NotificationSettingsChannelDBABC):
     def __init__(
@@ -70,8 +73,12 @@ class NotificationSettingsChannelPSQL(NotificationSettingsChannelDBABC):
         await self.session.commit()
 
 class NotificationSettingsPSQL(NotificationSettingsDBABC):
-    def __init__(self):
-        pass
+    
+    def __init__(
+        self,
+        session: AsyncSession,
+    ):
+        self.session = session
 
     async def create(self, notification_id: UUID, disabled: bool, user_id: UUID):
         if await self.get(user_id, notification_id):
@@ -130,3 +137,17 @@ class NotificationSettingsPSQL(NotificationSettingsDBABC):
             {"notification_id": notification_id, "user_id": user_id}
         )
         await self.session.commit()
+
+
+engine = create_async_engine(get_database_url_async())
+async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
+
+async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
+    async with async_session_maker() as session:
+        yield session
+
+async def get_channel_settings_db(session: AsyncSession = Depends(get_async_session)):
+    yield NotificationSettingsChannelPSQL(session)
+
+async def get_notifications_settings_db(session: AsyncSession = Depends(get_async_session)):
+    yield NotificationSettingsPSQL(session)

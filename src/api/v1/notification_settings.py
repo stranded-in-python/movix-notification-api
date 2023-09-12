@@ -6,7 +6,7 @@ from auth.users import get_current_user
 from models.notification_settings import ChannelSettings, NotificationSettings
 from services.abc import (NotificationChannelSettingsServiceABC,
                           NotificationSettingsServiceABC)
-from services.notification_settings import get_channel_settings, get_notification_settings
+from services.notification_settings import get_channel_settings_service, get_notification_settings_service
 
 router = APIRouter()
 
@@ -25,11 +25,11 @@ async def change_channel_settings(
     enabled: bool,
     user=Depends(get_current_user),
     notification_channel_settings_service: NotificationChannelSettingsServiceABC = Depends(
-        get_channel_settings
+        get_channel_settings_service
     ),
 ) -> Response(status_code=status.HTTP_200_OK):
-    pass
-
+    await notification_channel_settings_service.create_channel_setting(channel, enabled, user.user_id)
+    return Response(status_code=status.HTTP_200_OK)
 
 @router.get(
     "/channel-settings/",
@@ -43,10 +43,10 @@ async def change_channel_settings(
 async def change_channel_settings(
     user=Depends(get_current_user),
     notification_channel_settings_service: NotificationChannelSettingsServiceABC = Depends(
-        get_channel_settings
+        get_channel_settings_service
     ),
 ) -> list[ChannelSettings]:
-    pass
+    return await notification_channel_settings_service.get_channel_settings(user.user_id)
 
 
 @router.patch(
@@ -63,11 +63,11 @@ async def change_channel_settings(
     enabled: bool,
     user=Depends(get_current_user),
     notification_channel_settings_service: NotificationChannelSettingsServiceABC = Depends(
-        get_channel_settings
+        get_channel_settings_service
     ),
 ) -> Response(status_code=status.HTTP_200_OK):
-    pass
-
+    await notification_channel_settings_service.change_channel_settings(channel, enabled, user.user_id)
+    return Response(status_code=status.HTTP_200_OK)
 
 @router.delete(
     "/channel-settings/",
@@ -82,10 +82,11 @@ async def change_channel_settings(
     channel: str,
     user=Depends(get_current_user),
     notification_channel_settings_service: NotificationChannelSettingsServiceABC = Depends(
-        get_channel_settings
+        get_channel_settings_service
     ),
 ) -> Response(status_code=status.HTTP_200_OK):
-    pass
+    await notification_channel_settings_service.delete_channel_settings(channel, user.user_id)
+    return Response(status_code=status.HTTP_200_OK)
 
 
 @router.post(
@@ -102,16 +103,17 @@ async def change_notification_settings(
     disabled: bool,
     user=Depends(get_current_user),
     notification_settings_service: NotificationSettingsServiceABC = Depends(
-        get_notification_settings
+        get_notification_settings_service
     ),
 ) -> Response(status_code=status.HTTP_200_OK):
-    pass
+    await notification_settings_service.create_notification_setting(notification_id, disabled, user.user_id)
+    return Response(status_code=status.HTTP_200_OK)
 
 
 @router.get(
     "/notification-settings/",
     response_model=NotificationSettings,
-    summary="Get user notification settings",
+    summary="Get a list of user notification settings",
     description='Receive or not exact notification by sending boolean in "DISABLED" parameter',
     responses={
         status.HTTP_401_UNAUTHORIZED: {"description": "Missing token or inactive user."}
@@ -120,11 +122,10 @@ async def change_notification_settings(
 async def change_notification_settings(
     user=Depends(get_current_user),
     notification_settings_service: NotificationSettingsServiceABC = Depends(
-        get_notification_settings
+        get_notification_settings_service
     ),
 ) -> list[NotificationSettings]:
-    pass
-
+    return await notification_settings_service.get_notification_settings(user.user_id)
 
 @router.patch(
     "/notification-settings/",
@@ -140,11 +141,11 @@ async def change_notification_settings(
     disabled: bool,
     user=Depends(get_current_user),
     notification_settings_service: NotificationSettingsServiceABC = Depends(
-        get_notification_settings
+        get_notification_settings_service
     ),
 ) -> Response(status_code=status.HTTP_200_OK):
-    pass
-
+    await notification_settings_service.change_notification_settings(notification_id, disabled, user.user_id)
+    return Response(status_code=status.HTTP_200_OK)
 
 @router.delete(
     "/notification-settings/",
@@ -158,7 +159,8 @@ async def change_notification_settings(
     notification_id: UUID,
     user=Depends(get_current_user),
     notification_settings_service: NotificationSettingsServiceABC = Depends(
-        get_notification_settings
+        get_notification_settings_service
     ),
 ) -> Response(status_code=status.HTTP_200_OK):
-    pass
+    await notification_settings_service.delete_notification_settings(notification_id, user.user_id)
+    return Response(status_code=status.HTTP_200_OK)

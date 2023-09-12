@@ -1,9 +1,12 @@
 from uuid import UUID
 
+from fastapi import Depends
+
 from .abc import (NotificationChannelSettingsServiceABC,
                   NotificationSettingsServiceABC)
 from db.abc import NotificationSettingsChannelDBABC, NotificationSettingsDBABC
 from models.notification_settings import ChannelSettings, NotificationSettings
+from db.notification_settings import get_channel_settings_db, get_notifications_settings_db
 
 class NotificationChannelSettingsService(NotificationChannelSettingsServiceABC):
     def __init__(self, db: NotificationSettingsChannelDBABC):
@@ -44,8 +47,12 @@ class NotificationSettingsService(NotificationSettingsServiceABC):
         await self.db.delete(notification_id, user_id)
 
 
-def get_channel_settings():
-    return NotificationChannelSettingsService()
+async def get_channel_settings_service(
+    notification_db: NotificationSettingsChannelDBABC = Depends(get_channel_settings_db),
+) -> NotificationChannelSettingsService:
+    yield NotificationChannelSettingsService(notification_db)
 
-def get_notification_settings():
-    return NotificationSettingsService()
+async def get_notification_settings_service(
+    notification_db: NotificationSettingsDBABC = Depends(get_notifications_settings_db),
+) -> NotificationSettingsService:
+    yield NotificationSettingsService(notification_db)
