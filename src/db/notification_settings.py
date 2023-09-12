@@ -5,26 +5,27 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import async_sessionmaker  # noqa
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine  # noqa
 
-from .abc import NotificationSettingsChannelDBABC, NotificationSettingsDBABC
 from core.config import get_database_url_async
 
+from .abc import NotificationSettingsChannelDBABC, NotificationSettingsDBABC
+
+
 class NotificationSettingsChannelPSQL(NotificationSettingsChannelDBABC):
-    def __init__(
-        self,
-        session: AsyncSession,
-    ):
+    def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def create(self, channel: str, enabled: bool, user_id: UUID) -> None: # неизвестно что при таком раскладе вернет
+    async def create(
+        self, channel: str, enabled: bool, user_id: UUID
+    ) -> None:  # неизвестно что при таком раскладе вернет
         if await self.get(user_id, channel):
-            return None # или эксепшин что уже существует
+            return None  # или эксепшин что уже существует
         await self.session.execute(
             """
             INSERT INTO notifications.user_settings
             (user, default, email_enabled)
             (:user, :channel, :enabled)
             """,
-            {"user": user_id, "channel": channel, "enabled": enabled}
+            {"user": user_id, "channel": channel, "enabled": enabled},
         )
         await self.session.commit()
         return None
@@ -36,17 +37,17 @@ class NotificationSettingsChannelPSQL(NotificationSettingsChannelDBABC):
             FROM notifications.user_settings
             WHERE user = :user_id
             """,
-            {"user": user_id}
+            {"user": user_id},
         )
         return result.fetchall()._asdict()
-    
+
     async def get(self, user_id: UUID, channel: str) -> dict[str, Any]:
         result = await self.session.execute(
             """
             SELECT * from notifications.user_settings
             WHERE user = :user_id AND default = :channel
             """,
-            {"user_id": user_id, "channel": channel}
+            {"user_id": user_id, "channel": channel},
         )
         return result.fetchone()
 
@@ -58,38 +59,39 @@ class NotificationSettingsChannelPSQL(NotificationSettingsChannelDBABC):
             WHERE default = :channel AND
             user = :user_id
             """,
-            {"channel": channel, "enabled": enabled, "user_id": user_id}
+            {"channel": channel, "enabled": enabled, "user_id": user_id},
         )
         await self.session.commit()
-    
+
     async def delete(self, channel: str, user_id: UUID):
         await self.session.execute(
             """
             DELETE FROM notifications.user_settings
             WHERE default = :channel AND user = :user_id
             """,
-            {"channel": channel, "user_id": user_id}
+            {"channel": channel, "user_id": user_id},
         )
         await self.session.commit()
 
+
 class NotificationSettingsPSQL(NotificationSettingsDBABC):
-    
-    def __init__(
-        self,
-        session: AsyncSession,
-    ):
+    def __init__(self, session: AsyncSession):
         self.session = session
 
     async def create(self, notification_id: UUID, disabled: bool, user_id: UUID):
         if await self.get(user_id, notification_id):
-            return None # или эксепшин что уже существует
+            return None  # или эксепшин что уже существует
         await self.session.execute(
             """
             INSERT INTO notifications.notification_settings
             (user, notification, email_disabled)
             (:user_id, :notification_id, :disabled)
             """,
-            {"user_id": user_id, "notification_id": notification_id, "disabled": disabled}
+            {
+                "user_id": user_id,
+                "notification_id": notification_id,
+                "disabled": disabled,
+            },
         )
         await self.session.commit()
         return None
@@ -100,7 +102,7 @@ class NotificationSettingsPSQL(NotificationSettingsDBABC):
             SELECT * from notifications.notification_settings
             WHERE user = :user_id AND notification = :notification_id
             """,
-            {"user_id": user_id, "notification_id": notification_id}
+            {"user_id": user_id, "notification_id": notification_id},
         )
         return result.fetchone()
 
@@ -111,10 +113,10 @@ class NotificationSettingsPSQL(NotificationSettingsDBABC):
             FROM notifications.notification_settings
             WHERE user = :user_id
             """,
-            {"user_id": user_id}
+            {"user_id": user_id},
         )
         return result.fetchall()._asdict()
-    
+
     async def change(self, notification_id: UUID, disabled: bool, user_id: UUID):
         await self.session.execute(
             """
@@ -123,10 +125,14 @@ class NotificationSettingsPSQL(NotificationSettingsDBABC):
             WHERE notification = :notification_id
             AND user = :user_id
             """,
-            {"notification_id": notification_id, "disabled": disabled, "user_id": user_id}
+            {
+                "notification_id": notification_id,
+                "disabled": disabled,
+                "user_id": user_id,
+            },
         )
         await self.session.commit()
-    
+
     async def delete(self, notification_id: UUID, user_id: UUID):
         await self.session.execute(
             """
@@ -134,7 +140,7 @@ class NotificationSettingsPSQL(NotificationSettingsDBABC):
             WHERE notification = :notification
             AND user = :user_id
             """,
-            {"notification_id": notification_id, "user_id": user_id}
+            {"notification_id": notification_id, "user_id": user_id},
         )
         await self.session.commit()
 
@@ -142,12 +148,17 @@ class NotificationSettingsPSQL(NotificationSettingsDBABC):
 engine = create_async_engine(get_database_url_async())
 async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
 
+
 async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
     async with async_session_maker() as session:
         yield session
 
+
 async def get_channel_settings_db(session: AsyncSession = Depends(get_async_session)):
     yield NotificationSettingsChannelPSQL(session)
 
-async def get_notifications_settings_db(session: AsyncSession = Depends(get_async_session)):
+
+async def get_notifications_settings_db(
+    session: AsyncSession = Depends(get_async_session),
+):
     yield NotificationSettingsPSQL(session)

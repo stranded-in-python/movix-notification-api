@@ -2,7 +2,6 @@ from uuid import UUID
 
 from .mixins import BaseModel
 
-from pydantic import BaseModel
 
 class ChannelSettings(BaseModel):
     channel: str

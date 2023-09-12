@@ -27,6 +27,7 @@ class NotificationServiceABC(ABC):
     ) -> AsyncGenerator[list[UUID], None]:
         ...
 
+
 class NotificationChannelSettingsServiceABC(ABC):
     @abstractmethod
     async def create_channel_setting(self, channel: str, enabled: bool, user_id: UUID):

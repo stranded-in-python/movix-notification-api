@@ -2,11 +2,15 @@ from uuid import UUID
 
 from fastapi import Depends
 
-from .abc import (NotificationChannelSettingsServiceABC,
-                  NotificationSettingsServiceABC)
 from db.abc import NotificationSettingsChannelDBABC, NotificationSettingsDBABC
+from db.notification_settings import (
+    get_channel_settings_db,
+    get_notifications_settings_db,
+)
 from models.notification_settings import ChannelSettings, NotificationSettings
-from db.notification_settings import get_channel_settings_db, get_notifications_settings_db
+
+from .abc import NotificationChannelSettingsServiceABC, NotificationSettingsServiceABC
+
 
 class NotificationChannelSettingsService(NotificationChannelSettingsServiceABC):
     def __init__(self, db: NotificationSettingsChannelDBABC):
@@ -48,9 +52,12 @@ class NotificationSettingsService(NotificationSettingsServiceABC):
 
 
 async def get_channel_settings_service(
-    notification_db: NotificationSettingsChannelDBABC = Depends(get_channel_settings_db),
+    notification_db: NotificationSettingsChannelDBABC = Depends(
+        get_channel_settings_db
+    ),
 ) -> NotificationChannelSettingsService:
     yield NotificationChannelSettingsService(notification_db)
+
 
 async def get_notification_settings_service(
     notification_db: NotificationSettingsDBABC = Depends(get_notifications_settings_db),
