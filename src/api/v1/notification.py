@@ -15,8 +15,7 @@ router = APIRouter()
 
 @router.post("/message", response_model=None)
 async def post_message(
-    message: Message,
-    publisher: RabbitMQPublisher = Depends(get_publisher),
+    message: Message, publisher: RabbitMQPublisher = Depends(get_publisher)
 ) -> None:
     # Проверить статус суперпользователя у пользователя
 
@@ -35,10 +34,7 @@ async def on_registration(
 
 
 # Сформировать задание рассылки уведомления
-@router.post(
-    "/{id_notification}",
-    response_model=None,
-)
+@router.post("/{id_notification}", response_model=None)
 async def generate_notifiaction(
     id_notification: UUID,
     user_service: UserService = Depends(get_user_service),
@@ -50,8 +46,7 @@ async def generate_notifiaction(
 
     if notification is None:
         raise HTTPException(
-            status.HTTP_400_BAD_REQUEST,
-            detail=ErrorCode.NOTIFICATION_NOT_FOUND,
+            status.HTTP_400_BAD_REQUEST, detail=ErrorCode.NOTIFICATION_NOT_FOUND
         )
 
     async for users_ids in notification_service.get_notification_users(id_notification):

@@ -15,5 +15,7 @@ It sends notifications, using the RabbitMQ broker, FastAPI, Redis and Postgres t
 # Authors
 
 [Stanislav aka @sbkubric Bogatskiy, teamlead](https://github.com/sbkubric)
+
 [Viktor aka @VGostyaikin Gostyaikin](https://github.com/VGostyaikin)
+
 [Sergey aka @dogbusiness Koltunov](https://github.com/dogbusiness)

@@ -13,10 +13,7 @@ from .abc import NotificationServiceABC
 class NotificationService(NotificationServiceABC):
     notification_db: SANotificationDB
 
-    def __init__(
-        self,
-        notification_db: SANotificationDB,
-    ):
+    def __init__(self, notification_db: SANotificationDB):
         self.notification_db = notification_db
 
     async def get_notification(self, notification_id: UUID) -> Notification | None:
@@ -26,8 +23,7 @@ class NotificationService(NotificationServiceABC):
         self, notification_id: UUID
     ) -> AsyncGenerator[list[UUID], None]:
         async for users_ids in self.notification_db.get_notification_users(
-            notification_id=notification_id,
-            users_limit=user_propertis.users_limit,
+            notification_id=notification_id, users_limit=user_propertis.users_limit
         ):
             yield users_ids
 

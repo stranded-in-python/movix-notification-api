@@ -30,10 +30,7 @@ class BaseNotificationDatabase(t.Generic[ID, NP]):
 class SANotificationDB(BaseNotificationDatabase[UUID, Notification]):
     session: AsyncSession
 
-    def __init__(
-        self,
-        session: AsyncSession,
-    ):
+    def __init__(self, session: AsyncSession):
         self.session = session
         self.pack_size = 1000
 
@@ -123,6 +120,4 @@ async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
 
 
 async def get_notification_db(session: AsyncSession = Depends(get_async_session)):
-    yield SANotificationDB(
-        session,
-    )
+    yield SANotificationDB(session)
