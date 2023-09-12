@@ -1,10 +1,10 @@
 from uuid import UUID
 
-from .mixins import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ChannelSettings(BaseModel):
-    channel: str
+    channel: str = Field(alias="default")
     email_enabled: bool
 
 
