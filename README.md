@@ -10,6 +10,8 @@ It sends notifications, using the RabbitMQ broker, FastAPI, Redis and Postgres t
 
 # How do I use it?
 
+Installation instructions located in [main repo](https://github.com/stranded-in-python/movix)
+
 # How do I contribute?
 
 # Authors
