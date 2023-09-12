@@ -1,5 +1,3 @@
-import functools
-
 import aio_pika
 
 from core.config import PublisherProperties, publisher_properties
@@ -50,9 +48,7 @@ class RabbitMQPublisher:
 
         await self.open_channel()
 
-        exchange = await self._channel.get_exchange(
-            self.EXCHANGE,
-        )
+        exchange = await self._channel.get_exchange(self.EXCHANGE)
         await exchange.publish(
             aio_pika.Message(bytes(message, encoding="utf8")),
             routing_key=self.ROUTING_KEY,
@@ -60,6 +56,5 @@ class RabbitMQPublisher:
         )
 
 
-@functools.lru_cache
 def get_publisher() -> RabbitMQPublisher:
     return RabbitMQPublisher()

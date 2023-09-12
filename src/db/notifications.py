@@ -2,7 +2,6 @@ import typing as t
 from typing import AsyncGenerator
 from uuid import UUID
 
-import orjson
 from fastapi import Depends
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import async_sessionmaker  # noqa
@@ -62,14 +61,12 @@ class SANotificationDB(BaseNotificationDatabase[UUID, Notification]):
         if result.rowcount == 0:
             return None
 
-        row = result.fetchone()[0]
-
-        channels = orjson.loads(row.channels)
+        row = result.fetchone()
 
         notification = Notification(
             id=row.id,
             template_id=row.template_id,
-            channels=channels,
+            channels=row.channels,
             context=row.context_vars,
         )
 
