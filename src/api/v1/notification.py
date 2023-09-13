@@ -65,7 +65,7 @@ async def generate_notifiaction(
                 from_=user_propertis.notifications_email_from,
                 subject=notification.title,
             )
-            print(recipients)
+
             # сформировать Message
             message = Message(
                 context=notification.context,
