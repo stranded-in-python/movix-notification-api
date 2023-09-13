@@ -1,4 +1,4 @@
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Callable, Iterable
 from uuid import UUID
 
 from fastapi import Depends
@@ -6,12 +6,14 @@ from fastapi import Depends
 from core.config import user_propertis
 from db.notifications import SANotificationDB, get_notification_db
 from models.notifications import Notification
+from services.context import Context
 
 from .abc import NotificationServiceABC
 
 
 class NotificationService(NotificationServiceABC):
     notification_db: SANotificationDB
+    get_context_handler: Callable[[Notification, Iterable[UUID]], Context]
 
     def __init__(self, notification_db: SANotificationDB):
         self.notification_db = notification_db
@@ -26,6 +28,13 @@ class NotificationService(NotificationServiceABC):
             notification_id=notification_id, users_limit=user_propertis.users_limit
         ):
             yield users_ids
+
+    async def generate_context(
+        self, notification: Notification, user_ids: Iterable[UUID]
+    ) -> list:
+        handler = self.get_context_handler(notification, user_ids)
+        handler.resolve_context()
+        return handler.context
 
 
 async def get_notification_service(

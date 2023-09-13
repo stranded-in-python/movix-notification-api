@@ -6,6 +6,7 @@ from api.v1.common import ErrorCode
 from core.config import user_propertis
 from models.events import UserOnRegistration
 from models.queue import EmailTitle, Message
+from models.users import UserChannels
 from services.event import EventService, get_event_service
 from services.notification import NotificationService, get_notification_service
 from services.publisher import RabbitMQPublisher, get_publisher
@@ -54,21 +55,31 @@ async def generate_notifiaction(
         users_channels = await user_service.get_users_channels(users_ids)
 
         for channel_type in notification.channels:
-            recipients = [
-                channel
+            users_channels: list[UserChannels] = [
+                user_channels
                 for user_channels in users_channels
                 for channel in user_channels.channels
                 if channel.type == channel_type
             ]
+
+            recipients: list[str] = [
+                channel.value
+                for user_channels in users_channels
+                for channel in user_channels.channels
+            ]
+
+            # TODO generate recipients by channel_type
             _recipients = EmailTitle(
-                to_=[channel.value for channel in recipients],
+                to_=recipients,
                 from_=user_propertis.notifications_email_from,
                 subject=notification.title,
             )
-
+            context = notification_service.generate_context(
+                notification, (user_channels.id for user_channels in users_channels)
+            )
             # сформировать Message
             message = Message(
-                context=notification.context,
+                context=context,
                 template_id=notification.template_id,
                 type=channel_type,
                 recipients=_recipients,

@@ -89,7 +89,7 @@ class SANotificationDB(BaseNotificationDatabase[UUID, Notification]):
             id=row.id,
             template_id=row.template_id,
             channels=row.channels,
-            context=row.context_vars,
+            context_vars=row.context_vars,
             title=row.title,
         )
 
