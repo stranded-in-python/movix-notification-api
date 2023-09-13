@@ -77,10 +77,12 @@ class UserService(UserServiceABC):
                     for channel in _user_channels["channels"]
                 ]
 
-                user_channels = UserChannels(id=_user_channels["id"], channels=channels)
+                user_channels = UserChannels(
+                    id=_user_channels["user_id"], channels=channels
+                )
                 users_channels.append(user_channels)
             except Exception as e:
-                logger.error(f"Invalid user channels: {channels}. {e}")
+                LOGGER.error(f"Invalid user channels: {channels}. {e}")
 
         return users_channels
 

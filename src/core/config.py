@@ -29,7 +29,7 @@ class Settings(BaseSettings):
 class PublisherProperties(BaseSettings):
     amqp_url: str = (
         "amqp://guest:guest@localhost:5672/"
-        "%2F?connection_attempts=3&heartbeat=3600"  # flake8: noqa
+        "%2F?connection_attempts=3&heartbeat=60"  # flake8: noqa
     )
     exchange: str = "movix-notification"
     exchange_type: str = "fanout"
@@ -41,7 +41,7 @@ class PublisherProperties(BaseSettings):
 class EventsProperties(BaseSettings):
     on_registration_template_id: UUID = UUID(int=0)
     on_registration_vars: list[str] = [""]
-    on_registration_send_from: str = "welcom@movix.ru"
+    on_registration_send_from: str = "welcome@movix.ru"
     on_registration_subject: str = "Confirm you email"
 
 
@@ -59,6 +59,7 @@ class UsersProperties(BaseSettings):
     password: str = "123qwe"
     url_refresh_token: str = "http://auth:8000/api/v1/refresh"
     url_login: str = "http://auth:8000/api/v1/login"
+    notifications_email_from: str = "notifications@movix.ru"
 
 
 settings = Settings()

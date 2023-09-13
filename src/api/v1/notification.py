@@ -3,8 +3,9 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from api.v1.common import ErrorCode
+from core.config import user_propertis
 from models.events import UserOnRegistration
-from models.queue import Message
+from models.queue import EmailTitle, Message
 from services.event import EventService, get_event_service
 from services.notification import NotificationService, get_notification_service
 from services.publisher import RabbitMQPublisher, get_publisher
@@ -54,18 +55,23 @@ async def generate_notifiaction(
 
         for channel_type in notification.channels:
             recipients = [
-                user_channels.channels
+                channel
                 for user_channels in users_channels
                 for channel in user_channels.channels
                 if channel.type == channel_type
             ]
-
+            _recipients = EmailTitle(
+                to_=[channel.value for channel in recipients],
+                from_=user_propertis.notifications_email_from,
+                subject=notification.title,
+            )
+            print(recipients)
             # сформировать Message
             message = Message(
                 context=notification.context,
                 template_id=notification.template_id,
                 type=channel_type,
-                recipients=recipients,
+                recipients=_recipients,
             )
 
             await publisher.publish_message(message.json())

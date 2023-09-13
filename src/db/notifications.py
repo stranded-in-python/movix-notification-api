@@ -38,21 +38,43 @@ class SANotificationDB(BaseNotificationDatabase[UUID, Notification]):
         query_text = text(
             """
             WITH notification_data AS (
-                SELECT id, template_id, created_at, channels
-                FROM notifications.notification
-                WHERE id = :notification_id
+                SELECT
+                    id,
+                    template_id,
+                    created_at,
+                    channels,
+                    title
+                FROM
+                    notifications.notification
+                WHERE
+                    id = :notification_id
             ),
             notification_template_data AS (
-                SELECT notification_data.*, template.context_id
-                FROM notification_data
-                INNER JOIN notifications.template ON notification_data.template_id = template.id
+                SELECT
+                    notification_data.*,
+                    template.context_id
+                FROM
+                    notification_data
+                INNER JOIN
+                    notifications.template
+                ON
+                    notification_data.template_id = template.id
             ),
             notification_data_with_context AS (
-                SELECT notification_template_data.*, context.context_vars
-                FROM notification_template_data
-                INNER JOIN notifications.context ON notification_template_data.context_id = context.id
+                SELECT
+                    notification_template_data.*,
+                    context.context_vars
+                FROM
+                    notification_template_data
+                INNER JOIN
+                    notifications.context
+                ON
+                    notification_template_data.context_id = context.id
             )
-            SELECT * FROM notification_data_with_context;
+            SELECT
+                *
+            FROM
+                notification_data_with_context;
             """
         )
         query_params = {"notification_id": notification_id}
@@ -68,6 +90,7 @@ class SANotificationDB(BaseNotificationDatabase[UUID, Notification]):
             template_id=row.template_id,
             channels=row.channels,
             context=row.context_vars,
+            title=row.title,
         )
 
         return notification
@@ -79,14 +102,21 @@ class SANotificationDB(BaseNotificationDatabase[UUID, Notification]):
         query_text = text(
             """
         WITH notification_data AS (
-            SELECT recipients_id
-            FROM notifications.notification
-            WHERE id = :notification_id
+            SELECT
+                recipients_id
+            FROM
+                notifications.notification
+            WHERE
+                id = :notification_id
         )
-        SELECT user_group_membership.user_id
-        FROM notification_data
-        INNER JOIN notifications.user_group_membership
-        ON notification_data.recipients_id = user_group_membership.group_id;
+        SELECT
+            user_group_membership.user_id
+        FROM
+            notification_data
+        INNER JOIN
+            notifications.user_group_membership
+        ON
+            notification_data.recipients_id = user_group_membership.group_id;
         """
         )
         query_params = {"notification_id": notification_id}
