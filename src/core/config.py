@@ -47,6 +47,7 @@ class EventsProperties(BaseSettings):
 
 class UsersProperties(BaseSettings):
     url_get_users_channels: str = "http://auth:8000/api/v1/users/channels"
+    url_get_users: str = "http://auth:8000/api/v1/users"
     url_verify: str = "http://auth:8000/api/v1/auth/verify"
     users_limit: int = 60000
     access_token: str = (
@@ -65,7 +66,7 @@ class UsersProperties(BaseSettings):
 settings = Settings()
 publisher_properties = PublisherProperties()
 events_properties = EventsProperties()
-user_propertis = UsersProperties()
+user_properties = UsersProperties()
 authorization_data = {"access_token": "", "refresh_token": ""}
 
 

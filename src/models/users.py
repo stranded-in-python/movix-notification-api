@@ -1,6 +1,4 @@
-from uuid import UUID
-
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 
 
 class NotificationChannel(BaseModel):
@@ -14,12 +12,9 @@ class UserChannels(BaseModel):
 
 
 class User(BaseModel):
-    id: UUID
+    id: str
+    first_name: str
+    last_name: str
     username: str
-    email: EmailStr
-    first_name: str | None = None
-    last_name: str | None = None
-    is_active: bool = True
-    is_superuser: bool = False
-    is_admin: bool = False
-    is_verified: bool = False
+    is_active: bool
+    is_verified: bool
