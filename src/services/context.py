@@ -1,13 +1,15 @@
 import abc
 import enum
 import uuid
-from typing import Iterable
+from typing import Callable, Iterable
 
 from models.notifications import GroupedContext, Notification, UserContext
+from models.users import User
 
 
 def get_chain_mode_by_notification(notification: Notification):
     if notification:
+        print(ContextChain.default)
         return ContextChain.default
 
 
@@ -22,7 +24,11 @@ class ContextHandlerBase(abc.ABC):
 
 
 class ContextHandlerUser(ContextHandlerBase):
-    async def handle(self, user_ids: list[uuid.UUID]):
+    async def handle(
+        self,
+        get_users_from_auth: Callable[[list[uuid.UUID]], list[User]],
+        user_ids: list[uuid.UUID],
+    ):
         users = await get_users_from_auth(user_ids)
 
         for user in users:
@@ -93,7 +99,7 @@ class Context(ContextBase):
     def hash_context(self, context: UserContext) -> str:
         return str([item for item in context.context.items()])
 
-    async def resolve_context(self) -> Iterable[GroupedContext]:
+    async def resolve_context(self) -> list[GroupedContext]:
         """Go to each variable handler"""
         chain = await get_chain_mode_by_notification(notification=self.notification)
         await chain.handle(self.notification.context_vars, self.user_ids)
@@ -124,5 +130,9 @@ def get_context_handler(
     return Context(notification, user_ids)
 
 
-async def get_users_from_auth():
+async def get_context_handler_dependency():
+    return get_context_handler
+
+
+async def get_users_from_auth() -> list[User]:
     ...
