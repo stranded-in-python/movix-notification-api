@@ -44,9 +44,9 @@ class UserService(UserServiceABC):
             'X-Request-Id': str(uuid.uuid4()),
             'Authorization': f'Bearer {access_token}',
         }
-        request = httpx.Request(
-            'GET', url, content=orjson.dumps(user_ids), headers=headers
-        )
+        data = orjson.dumps([str(uid) for uid in user_ids])
+        print(data)
+        request = httpx.Request('GET', url, data=data, headers=headers)
         response = await self.client.send(request=request)
         if response.status_code == 200:
             return response.json()
