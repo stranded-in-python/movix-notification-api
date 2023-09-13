@@ -105,7 +105,7 @@ class Context(ContextBase):
     def hash_context(self, context: UserContext) -> str:
         return str([item for item in context.context.items()])
 
-    async def resolve_context(self):
+    async def resolve_context(self) -> typing.Iterable[GroupedContext]:
         """Go to each variable handler"""
         if self.notification is None:
             return
@@ -127,6 +127,7 @@ class Context(ContextBase):
             group_context.user_ids.append(context.user_id)
 
         self.context = group_contexts.values()
+        return self.context
 
 
 class ContextChain(tuple[str, typing.Iterable[type[ContextHandlerBase]]], enum.Enum):
