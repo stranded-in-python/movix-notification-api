@@ -3,7 +3,7 @@ FROM python:3.11-slim-bullseye as python
 # Python build stage
 FROM python as python-build-stage
 
-ARG BUILD_ENVIRONMENT=production
+ARG BUILD_ENVIRONMENT=local
 
 # Install apt packages
 RUN apt-get update && apt-get install --no-install-recommends -y \
@@ -50,11 +50,11 @@ COPY --from=python-build-stage /usr/src/app/wheels  /wheels/
 RUN pip install --no-cache-dir --no-index --find-links=/wheels/ /wheels/* \
 	&& rm -rf /wheels/
 
-COPY ./compose/production/entrypoint /entrypoint
+COPY ./compose/local/api/entrypoint /entrypoint
 RUN sed -i 's/\r$//g' /entrypoint
 RUN chmod +x /entrypoint
 
-COPY ./compose/production/start /start
+COPY ./compose/local/api/start /start
 RUN sed -i 's/\r$//g' /start
 RUN chmod +x /start
 
