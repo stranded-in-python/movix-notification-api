@@ -9,3 +9,12 @@ class NotificationChannel(BaseModel):
 class UserChannels(BaseModel):
     id: str  # ID of the user
     channels: list[NotificationChannel]
+
+
+class User(BaseModel):
+    id: str
+    first_name: str
+    last_name: str
+    username: str
+    is_active: bool
+    is_verified: bool

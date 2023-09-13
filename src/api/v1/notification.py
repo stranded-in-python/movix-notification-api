@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from api.v1.common import ErrorCode
-from core.config import user_propertis
+from core.config import user_properties
 from models.events import UserOnRegistration
 from models.queue import EmailTitle, Message
 from models.users import UserChannels
@@ -52,7 +52,7 @@ async def generate_notifiaction(
         )
 
     async for users_ids in notification_service.get_notification_users(id_notification):
-        users_channels = await user_service.get_users_channels(users_ids)
+        users_channels = await user_service.get_users_channels(users_ids)  # type: ignore
 
         for channel_type in notification.channels:
             users_channels: list[UserChannels] = [
@@ -70,18 +70,18 @@ async def generate_notifiaction(
 
             # TODO generate recipients by channel_type
             _recipients = EmailTitle(
-                to_=recipients,
-                from_=user_propertis.notifications_email_from,
+                to_=recipients,  # type: ignore
+                from_=user_properties.notifications_email_from,  # type: ignore
                 subject=notification.title,
             )
             context = notification_service.generate_context(
-                notification, (user_channels.id for user_channels in users_channels)
+                notification, (user_channels.id for user_channels in users_channels)  # type: ignore
             )
             # сформировать Message
             message = Message(
-                context=context,
+                context=context,  # type: ignore
                 template_id=notification.template_id,
-                type=channel_type,
+                type=channel_type,  # type: ignore
                 recipients=_recipients,
             )
 

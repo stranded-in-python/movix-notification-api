@@ -3,7 +3,7 @@ from uuid import UUID
 
 from fastapi import Depends
 
-from core.config import user_propertis
+from core.config import user_properties
 from db.notifications import SANotificationDB, get_notification_db
 from models.notifications import Notification
 from services.context import Context
@@ -25,7 +25,7 @@ class NotificationService(NotificationServiceABC):
         self, notification_id: UUID
     ) -> AsyncGenerator[list[UUID], None]:
         async for users_ids in self.notification_db.get_notification_users(
-            notification_id=notification_id, users_limit=user_propertis.users_limit
+            notification_id=notification_id, users_limit=user_properties.users_limit
         ):
             yield users_ids
 

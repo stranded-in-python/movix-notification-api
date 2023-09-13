@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from core.config import events_properties, user_propertis
+from core.config import events_properties, user_properties
 from core.exceptions import EventNameError
 from models.events import Events, UserOnRegistration
 from models.queue import EmailTitle, Message, MessageType
@@ -38,7 +38,7 @@ class EventService:
 
     def _on_registration_context(self, user: UserOnRegistration):
         context = {
-            "verefy_url": user_propertis.url_verify,
+            "verefy_url": user_properties.url_verify,
             "verification_token": user.verification_token,
         }
         return context
