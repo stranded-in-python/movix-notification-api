@@ -1,14 +1,14 @@
 from functools import lru_cache
 
-from core.config import events_properties, user_propertis
+from core.config import events_properties, user_properties
 from core.exceptions import EventNameError
-from models.events import UserOnRegistration
+from models.events import Events, UserOnRegistration
 from models.queue import EmailTitle, Message, MessageType
 
 
 class EventService:
     def on_registration(self, user: UserOnRegistration) -> Message:
-        event_name = "on_registration"
+        event_name = Events.on_registration
 
         template_id = self.get_template_id(event_name)
         context = self.get_template_context(event_name, user)
@@ -22,7 +22,7 @@ class EventService:
 
     def get_template_id(self, event_name):
         match event_name:
-            case "on_registration":
+            case Events.on_registration:
                 return events_properties.on_registration_template_id
 
             case _:
@@ -30,7 +30,7 @@ class EventService:
 
     def get_template_context(self, event_name, user):
         match event_name:
-            case "on_registration":
+            case Events.on_registration:
                 return self._on_registration_context(user)
 
             case _:
@@ -38,14 +38,14 @@ class EventService:
 
     def _on_registration_context(self, user: UserOnRegistration):
         context = {
-            "verefy_url": user_propertis.url_verify,
+            "verefy_url": user_properties.url_verify,
             "verification_token": user.verification_token,
         }
         return context
 
     def get_message_recipients(self, event_name, user):
         match event_name:
-            case "on_registration":
+            case Events.on_registration:
                 return self._on_registration_recipients(user)
 
             case _:

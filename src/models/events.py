@@ -1,6 +1,11 @@
+from enum import Enum
 from uuid import UUID
 
 from pydantic import BaseModel, EmailStr
+
+
+class Events(str, Enum):
+    on_registration = "on_registration"
 
 
 class UserOnRegistration(BaseModel):
