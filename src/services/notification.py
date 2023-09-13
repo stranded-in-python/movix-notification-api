@@ -30,5 +30,5 @@ class NotificationService(NotificationServiceABC):
 
 async def get_notification_service(
     notification_db: SANotificationDB = Depends(get_notification_db),
-) -> NotificationService:
+) -> AsyncGenerator[NotificationService, None]:
     yield NotificationService(notification_db)

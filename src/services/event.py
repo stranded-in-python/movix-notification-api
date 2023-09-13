@@ -62,10 +62,7 @@ class EventService:
         self, context: dict, template_id: str, type: MessageType, recipients: list
     ) -> Message:
         return Message(
-            context=context,
-            template_id=template_id,
-            type=type,
-            recipients=recipients,
+            context=context, template_id=template_id, type=type, recipients=recipients
         )
 
 

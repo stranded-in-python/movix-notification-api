@@ -1,3 +1,4 @@
+import typing
 import uuid
 from uuid import UUID
 
@@ -38,20 +39,18 @@ class UserService(UserServiceABC):
         """
         url = user_propertis.url_get_users_channels
         access_token = await self._get_access_token()
-        print(access_token)
         headers = {
             'Content-Type': "application/json",
             'X-Request-Id': str(uuid.uuid4()),
             'Authorization': f'Bearer {access_token}',
         }
-        data = orjson.dumps([str(uid) for uid in user_ids])
-        print(data)
-        request = httpx.Request('GET', url, data=data, headers=headers)
+        data = orjson.dumps({"ids": [str(uid) for uid in user_ids]})
+        request = httpx.Request('GET', url, data=data, headers=headers)  # type: ignore
         response = await self.client.send(request=request)
-        if response.status_code == 200:
-            return response.json()
+        if response.status_code != 200:
+            response.raise_for_status()
 
-        response.raise_for_status()
+        return response.json()
 
     async def _serialize_users_channels(
         self, _users_channels: list[dict]
@@ -69,6 +68,7 @@ class UserService(UserServiceABC):
             Exception: If there is an error during serialization.
         """
         users_channels = []
+        channels = []
 
         for _user_channels in _users_channels:
             try:
@@ -104,10 +104,7 @@ class UserService(UserServiceABC):
     async def _get_refresh_token(self) -> str | None:
 
         url = user_propertis.url_login
-        headers = {
-            # 'Content-Type': "multipart/form-data",
-            'X-Request-Id': str(uuid.uuid4())
-        }
+        headers = {'X-Request-Id': str(uuid.uuid4())}
         data = {
             "username": user_propertis.username,
             "password": user_propertis.password,
@@ -126,5 +123,5 @@ class UserService(UserServiceABC):
         authorization_data['refresh_token'] = refresh_token
 
 
-async def get_user_service() -> UserService:
+async def get_user_service() -> typing.AsyncGenerator[UserService, None]:
     yield UserService(httpx.AsyncClient())
