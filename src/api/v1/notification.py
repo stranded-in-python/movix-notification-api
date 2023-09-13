@@ -74,9 +74,10 @@ async def generate_notifiaction(
                 from_=user_properties.notifications_email_from,  # type: ignore
                 subject=notification.title,
             )
-            context = notification_service.generate_context(
+            context = await notification_service.generate_context(
                 notification, (user_channels.id for user_channels in users_channels)  # type: ignore
             )
+            print(context)
             # сформировать Message
             message = Message(
                 context=context,  # type: ignore

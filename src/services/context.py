@@ -6,6 +6,7 @@ import uuid
 from models.notifications import GroupedContext, Notification, UserContext
 from models.users import User
 from services import user as user_service
+from services.abc import ContextBase
 
 
 async def get_users(user_ids: typing.Iterable[uuid.UUID]) -> typing.Iterable[User]:
@@ -76,23 +77,6 @@ class ContextHandlerChainBase(abc.ABC):
 
 class ContextHandlerChain(ContextHandlerChainBase):
     ...
-
-
-class ContextBase(abc.ABC):
-    context: typing.Iterable
-
-    def __init__(
-        self, notification: Notification, user_ids: typing.Iterable[uuid.UUID]
-    ):
-        self.notification = notification
-        self.user_ids = user_ids
-
-    def hash_context(self, context: UserContext) -> str:
-        ...
-
-    async def resolve_context(self) -> typing.Iterable[GroupedContext]:
-        """Go to each variable handler"""
-        ...
 
 
 class Context(ContextBase):

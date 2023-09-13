@@ -4,6 +4,7 @@ from uuid import UUID
 
 import backoff
 import httpx
+import orjson
 
 from core.config import authorization_data, user_properties
 from core.logger import logger
@@ -18,7 +19,7 @@ class UserService(UserServiceABC):
         self.client = client
 
     async def get_users(self, user_ids: typing.Iterable[UUID]) -> typing.Iterable[User]:
-        body = {"ids": [str(uid) for uid in user_ids]}
+        body = orjson.dumps({"ids": [str(uid) for uid in user_ids]})
         users = await self._get_request_with_body(user_properties.url_get_users, body)
 
         serialized_users = await self._serialize_users(users)
@@ -42,13 +43,14 @@ class UserService(UserServiceABC):
         Raises:
             HTTPError: If the request fails with a non-200 status code.
         """
-        url = user_properties.url_get_users_channels
+        # url = user_properties.url_get_users_channels
         access_token = await self._get_access_token()
         headers = {
             'Content-Type': "application/json",
             'X-Request-Id': str(uuid.uuid4()),
             'Authorization': f'Bearer {access_token}',
         }
+
         request = httpx.Request('GET', url, data=body, headers=headers)
         response = await self.client.send(request=request)
         if response.status_code != 200:
@@ -59,7 +61,7 @@ class UserService(UserServiceABC):
     async def get_users_channels(
         self, user_ids: typing.Iterable[UUID]
     ) -> typing.Iterable[UserChannels]:
-        body = {"ids": [str(uid) for uid in user_ids]}
+        body = orjson.dumps({"ids": [str(uid) for uid in user_ids]})
         users_channels = await self._get_request_with_body(
             user_properties.url_get_users_channels, body
         )

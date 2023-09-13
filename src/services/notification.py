@@ -38,8 +38,8 @@ class NotificationService(NotificationServiceABC):
         self, notification: Notification, user_ids: Iterable[UUID]
     ) -> list:
         handler = self.get_context_handler(notification, user_ids)
-        handler.resolve_context()
-        return handler.context
+        context = await handler.resolve_context()
+        return context
 
 
 async def get_notification_service(
