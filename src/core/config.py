@@ -27,6 +27,7 @@ class Settings(BaseSettings):
 
     sentry_dsn_api: str = ""
 
+
 class PublisherProperties(BaseSettings):
     amqp_url: str = (
         "amqp://guest:guest@localhost:5672/"
