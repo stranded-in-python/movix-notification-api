@@ -25,6 +25,7 @@ class Settings(BaseSettings):
 
     pack_size: int = 1000
 
+    sentry_dsn_api: str = ""
 
 class PublisherProperties(BaseSettings):
     amqp_url: str = (
@@ -64,6 +65,12 @@ class UsersProperties(BaseSettings):
 
 
 settings = Settings()
+
+if settings.sentry_dsn_api:
+    import sentry_sdk  # type: ignore
+
+    sentry_sdk.init(dsn=settings.sentry_dsn_api, traces_sample_rate=1.0)
+
 publisher_properties = PublisherProperties()
 events_properties = EventsProperties()
 user_properties = UsersProperties()
