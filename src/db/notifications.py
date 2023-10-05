@@ -38,21 +38,43 @@ class SANotificationDB(BaseNotificationDatabase[UUID, Notification]):
         query_text = text(
             """
             WITH notification_data AS (
-                SELECT id, template_id, created_at, channels
-                FROM notifications.notification
-                WHERE id = :notification_id
+                SELECT
+                    id,
+                    template_id,
+                    created_at,
+                    channels,
+                    title
+                FROM
+                    notifications.notification
+                WHERE
+                    id = :notification_id
             ),
             notification_template_data AS (
-                SELECT notification_data.*, template.context_id
-                FROM notification_data
-                INNER JOIN notifications.template ON notification_data.template_id = template.id
+                SELECT
+                    notification_data.*,
+                    template.context_id
+                FROM
+                    notification_data
+                INNER JOIN
+                    notifications.template
+                ON
+                    notification_data.template_id = template.id
             ),
             notification_data_with_context AS (
-                SELECT notification_template_data.*, context.context_vars
-                FROM notification_template_data
-                INNER JOIN notifications.context ON notification_template_data.context_id = context.id
+                SELECT
+                    notification_template_data.*,
+                    context.context_vars
+                FROM
+                    notification_template_data
+                INNER JOIN
+                    notifications.context
+                ON
+                    notification_template_data.context_id = context.id
             )
-            SELECT * FROM notification_data_with_context;
+            SELECT
+                *
+            FROM
+                notification_data_with_context;
             """
         )
         query_params = {"notification_id": notification_id}
@@ -67,7 +89,8 @@ class SANotificationDB(BaseNotificationDatabase[UUID, Notification]):
             id=row.id,
             template_id=row.template_id,
             channels=row.channels,
-            context=row.context_vars,
+            context_vars=row.context_vars,
+            title=row.title,
         )
 
         return notification
@@ -76,18 +99,26 @@ class SANotificationDB(BaseNotificationDatabase[UUID, Notification]):
         self, notification_id: UUID, users_limit: int
     ) -> AsyncGenerator[list[UUID], None]:
         """Get a notification users"""
-        query_text = """
+        query_text = text(
+            """
         WITH notification_data AS (
-            SELECT recipients_id
-            FROM notifications.notification
-            WHERE id = :notification_id
+            SELECT
+                recipients_id
+            FROM
+                notifications.notification
+            WHERE
+                id = :notification_id
         )
-        SELECT user_group_membership.user_id
-        FROM notification_data
-        INNER JOIN notifications.user_group_membership
-        ON notification_data.recipients_id = user_group_membership.group_id
-        ORDER BY user_group_membership.user_id;
+        SELECT
+            user_group_membership.user_id
+        FROM
+            notification_data
+        INNER JOIN
+            notifications.user_group_membership
+        ON
+            notification_data.recipients_id = user_group_membership.group_id;
         """
+        )
         query_params = {"notification_id": notification_id}
 
         result = await self.session.execute(query_text, query_params)
@@ -96,7 +127,7 @@ class SANotificationDB(BaseNotificationDatabase[UUID, Notification]):
         while result_not_empty:
             users_ids = []
 
-            while len(users_ids) < users_limit or result_not_empty:
+            while result_not_empty and len(users_ids) < users_limit:
 
                 rows = result.fetchmany(self.pack_size)
                 if len(rows) == 0:

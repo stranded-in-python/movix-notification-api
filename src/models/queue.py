@@ -4,10 +4,6 @@ from uuid import UUID
 from pydantic import BaseModel, EmailStr, root_validator
 
 
-class Recipients(BaseModel):
-    ...
-
-
 class MessageType(str, Enum):
     email = "email"
 
@@ -15,7 +11,7 @@ class MessageType(str, Enum):
 class EmailTitle(BaseModel):
     to_: list[EmailStr]
     from_: EmailStr
-    subject_: str
+    subject: str
 
 
 class Message(BaseModel):
@@ -27,7 +23,7 @@ class Message(BaseModel):
     @root_validator
     def recipients_must_match_type(cls, values):
         recipients = values.get("recipients")
-        _type = values.get("_type")
+        _type = values.get("type")
 
         if _type == MessageType.email:
             if not isinstance(recipients, EmailTitle):

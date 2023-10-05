@@ -181,3 +181,10 @@ pyrightconfig.json
 !.envs/.local
 !.envs/.*.example
 projects/
+<<<<<<< HEAD
+=======
+.vscode/launch.json
+NetrwTreeListing
+
+.vscode/
+>>>>>>> 7d76f2b (fix: cleanup)

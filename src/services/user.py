@@ -1,31 +1,41 @@
+import typing
+import uuid
 from uuid import UUID
 
+import backoff
 import httpx
 import orjson
 
-from core.config import user_propertis
+from core.config import authorization_data, user_properties
 from core.logger import logger
-from models.users import NotificationChannel, UserChannels
+from models.users import NotificationChannel, User, UserChannels
 from services.abc import UserServiceABC
+
+LOGGER = logger()
 
 
 class UserService(UserServiceABC):
     def __init__(self, client: httpx.AsyncClient):
         self.client = client
 
-    async def get_users_channels(self, user_ids: list[UUID]) -> list[UserChannels]:
-        users_channels = await self._get_users_channels(user_ids)
+    async def get_users(self, user_ids: typing.Iterable[UUID]) -> typing.Iterable[User]:
+        body = orjson.dumps({"ids": [str(uid) for uid in user_ids]})
+        users = await self._get_request_with_body(user_properties.url_get_users, body)
 
-        serialized_channels = await self._serialize_users_channels(users_channels)
+        serialized_users = await self._serialize_users(users)
 
-        return serialized_channels
+        return serialized_users
 
-    async def _get_users_channels(self, user_ids: list[UUID]) -> list[dict]:
+    @backoff.on_exception(backoff.expo, httpx.RequestError, max_tries=5)
+    async def _get_request_with_body(
+        self, url: str, body: typing.Mapping[str, typing.Any]
+    ) -> typing.Iterable[typing.Mapping[str, typing.Any]]:
         """
-        Retrieves the channels associated with the specified user IDs.
+        Does the get request associated with the given body.
 
         Args:
-            user_ids (list[UUID]): A list of UUIDs representing the user IDs.
+            url (str): The url of the request.
+            body (dict[str, typing.Any]): A body of request.
 
         Returns:
             dict: A dictionary containing the response JSON if the request is successful.
@@ -33,16 +43,36 @@ class UserService(UserServiceABC):
         Raises:
             HTTPError: If the request fails with a non-200 status code.
         """
-        url = user_propertis.url_get_users_channels
-        response = await self.client.post(url, data=orjson.dumps(user_ids))
-        if response.status_code == 200:
-            return response.json()
+        # url = user_properties.url_get_users_channels
+        access_token = await self._get_access_token()
+        headers = {
+            'Content-Type': "application/json",
+            'X-Request-Id': str(uuid.uuid4()),
+            'Authorization': f'Bearer {access_token}',
+        }
 
-        response.raise_for_status()
+        request = httpx.Request('GET', url, data=body, headers=headers)
+        response = await self.client.send(request=request)
+        if response.status_code != 200:
+            response.raise_for_status()
+
+        return response.json()
+
+    async def get_users_channels(
+        self, user_ids: typing.Iterable[UUID]
+    ) -> typing.Iterable[UserChannels]:
+        body = orjson.dumps({"ids": [str(uid) for uid in user_ids]})
+        users_channels = await self._get_request_with_body(
+            user_properties.url_get_users_channels, body
+        )
+
+        serialized_channels = await self._serialize_users_channels(users_channels)
+
+        return serialized_channels
 
     async def _serialize_users_channels(
-        self, _users_channels: list[dict]
-    ) -> list[UserChannels]:
+        self, _users_channels: typing.Iterable[typing.Mapping[str, typing.Any]]
+    ) -> typing.Iterable[UserChannels]:
         """
         Serializes a list of users channels.
 
@@ -56,6 +86,7 @@ class UserService(UserServiceABC):
             Exception: If there is an error during serialization.
         """
         users_channels = []
+        channels = []
 
         for _user_channels in _users_channels:
             try:
@@ -64,13 +95,82 @@ class UserService(UserServiceABC):
                     for channel in _user_channels["channels"]
                 ]
 
-                user_channels = UserChannels(id=_user_channels["id"], channels=channels)
+                user_channels = UserChannels(
+                    id=_user_channels["user_id"], channels=channels
+                )
                 users_channels.append(user_channels)
             except Exception as e:
-                logger.error(f"Invalid user channels: {channels}. {e}")
+                LOGGER.error(f"Invalid user channels: {channels}. {e}")
 
         return users_channels
 
+    async def _serialize_users(
+        self, _users: typing.Iterable[typing.Mapping[str, typing.Any]]
+    ) -> typing.Iterable[User]:
+        """
+        Serializes a list of users.
 
-async def get_user_service() -> UserService:
-    yield UserService(httpx.AsyncClient)
+        Args:
+            _users (list[dict]): A list of dictionaries representing users.
+
+        Returns:
+            list (User): The serialized user channels.
+
+        Raises:
+            Exception: If there is an error during serialization.
+        """
+
+        users = []
+
+        try:
+            users = [User(**user) for user in _users]
+        except Exception as e:
+            LOGGER.error(f"Invalid user: {_users}. {e}")
+
+        return users
+
+    async def _get_access_token(self) -> str | None:
+        refresh_token = await self._get_refresh_token()
+
+        url = user_properties.url_refresh_token
+        headers = {
+            'X-Request-Id': str(uuid.uuid4()),
+            'Authorization': f'Bearer {refresh_token}',
+        }
+        request = httpx.Request('POST', url, headers=headers)
+        response = await self.client.send(request=request)
+        LOGGER.info(response.status_code)
+        if response.status_code == 200:
+            access_token = response.json()['access_token']
+            await self._set_access_token(access_token)
+            return access_token
+        response.raise_for_status()
+
+    async def _get_refresh_token(self) -> str | None:
+
+        url = user_properties.url_login
+        headers = {'X-Request-Id': str(uuid.uuid4())}
+        data = {
+            "username": user_properties.username,
+            "password": user_properties.password,
+        }
+        response = await self.client.post(url=url, headers=headers, data=data)
+        if response.status_code == 200:
+            refresh_token = response.json()['refresh_token']
+            await self._set_refresh_token(refresh_token)
+            return refresh_token
+        response.raise_for_status()
+
+    async def _set_access_token(self, access_token):
+        authorization_data['access_token'] = access_token
+
+    async def _set_refresh_token(self, refresh_token):
+        authorization_data['refresh_token'] = refresh_token
+
+
+def get_service() -> UserService:
+    return UserService(httpx.AsyncClient())
+
+
+async def get_user_service() -> typing.AsyncGenerator[UserService, None]:
+    yield UserService(httpx.AsyncClient())

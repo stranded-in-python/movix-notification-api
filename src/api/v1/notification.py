@@ -3,8 +3,10 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from api.v1.common import ErrorCode
+from core.config import user_properties
 from models.events import UserOnRegistration
-from models.queue import Message
+from models.queue import EmailTitle, Message
+from models.users import UserChannels
 from services.event import EventService, get_event_service
 from services.notification import NotificationService, get_notification_service
 from services.publisher import RabbitMQPublisher, get_publisher
@@ -50,22 +52,38 @@ async def generate_notifiaction(
         )
 
     async for users_ids in notification_service.get_notification_users(id_notification):
-        users_channels = await user_service.get_users_channels(users_ids)
+        users_channels = await user_service.get_users_channels(users_ids)  # type: ignore
 
         for channel_type in notification.channels:
-            recipients = [
-                user_channels.channels
+            users_channels: list[UserChannels] = [
+                user_channels
                 for user_channels in users_channels
                 for channel in user_channels.channels
                 if channel.type == channel_type
             ]
 
+            recipients: list[str] = [
+                channel.value
+                for user_channels in users_channels
+                for channel in user_channels.channels
+            ]
+
+            # TODO generate recipients by channel_type
+            _recipients = EmailTitle(
+                to_=recipients,  # type: ignore
+                from_=user_properties.notifications_email_from,  # type: ignore
+                subject=notification.title,
+            )
+            context = await notification_service.generate_context(
+                notification, (user_channels.id for user_channels in users_channels)  # type: ignore
+            )
+            print(context)
             # сформировать Message
             message = Message(
-                context=notification.context,
+                context=context,  # type: ignore
                 template_id=notification.template_id,
-                type=channel_type,
-                recipients=recipients,
+                type=channel_type,  # type: ignore
+                recipients=_recipients,
             )
 
             await publisher.publish_message(message.json())
