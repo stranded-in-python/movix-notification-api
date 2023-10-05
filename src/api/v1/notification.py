@@ -1,10 +1,15 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 
 from api.v1.common import ErrorCode
 from core.config import user_properties
-from models.events import UserOnRegistration
+from models.events import (
+    UserOnPaymentError,
+    UserOnRefund,
+    UserOnRegistration,
+    UserOnSubscription,
+)
 from models.queue import EmailTitle, Message
 from models.users import UserChannels
 from services.event import EventService, get_event_service
@@ -19,8 +24,6 @@ router = APIRouter()
 async def post_message(
     message: Message, publisher: RabbitMQPublisher = Depends(get_publisher)
 ) -> None:
-    # Проверить статус суперпользователя у пользователя
-
     await publisher.publish_message(message.json())
 
 
@@ -35,7 +38,39 @@ async def on_registration(
     await publisher.publish_message(message.json())
 
 
-# Сформировать задание рассылки уведомления
+@router.post("/events/refund/on", response_model=None)
+async def on_refund(
+    context: UserOnRefund,
+    event_service: EventService = Depends(get_event_service),
+    publisher: RabbitMQPublisher = Depends(get_publisher),
+) -> Response(status_code=status.HTTP_200_OK):
+    message = event_service.on_refund(context)
+
+    await publisher.publish_message(message.json())
+
+
+@router.post("/events/subscription/on", response_model=None)
+async def on_subscription(
+    context: UserOnSubscription,
+    event_service: EventService = Depends(get_event_service),
+    publisher: RabbitMQPublisher = Depends(get_publisher),
+) -> Response(status_code=status.HTTP_200_OK):
+    message = event_service.on_subscription(context)
+
+    await publisher.publish_message(message.json())
+
+
+@router.post("/events/payment-error/on", response_model=None)
+async def on_payment_error(
+    context: UserOnPaymentError,
+    event_service: EventService = Depends(get_event_service),
+    publisher: RabbitMQPublisher = Depends(get_publisher),
+) -> Response(status_code=status.HTTP_200_OK):
+    message = event_service.on_payment_error(context)
+
+    await publisher.publish_message(message.json())
+
+
 @router.post("/{id_notification}", response_model=None)
 async def generate_notifiaction(
     id_notification: UUID,
@@ -43,7 +78,6 @@ async def generate_notifiaction(
     notification_service: NotificationService = Depends(get_notification_service),
     publisher: RabbitMQPublisher = Depends(get_publisher),
 ):
-    # Получить данные уведомления
     notification = await notification_service.get_notification(id_notification)
 
     if notification is None:
@@ -68,7 +102,6 @@ async def generate_notifiaction(
                 for channel in user_channels.channels
             ]
 
-            # TODO generate recipients by channel_type
             _recipients = EmailTitle(
                 to_=recipients,  # type: ignore
                 from_=user_properties.notifications_email_from,  # type: ignore
@@ -77,8 +110,6 @@ async def generate_notifiaction(
             context = await notification_service.generate_context(
                 notification, (user_channels.id for user_channels in users_channels)  # type: ignore
             )
-            print(context)
-            # сформировать Message
             message = Message(
                 context=context,  # type: ignore
                 template_id=notification.template_id,

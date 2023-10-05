@@ -1,69 +1,65 @@
 from functools import lru_cache
 
-from core.config import events_properties, user_properties
-from core.exceptions import EventNameError
-from models.events import Events, UserOnRegistration
+import models.events as events
+from core.config import user_properties
 from models.queue import EmailTitle, Message, MessageType
 
 
 class EventService:
-    def on_registration(self, user: UserOnRegistration) -> Message:
-        event_name = Events.on_registration
-
-        template_id = self.get_template_id(event_name)
-        context = self.get_template_context(event_name, user)
-        recipients = self.get_message_recipients(event_name, user)
-
-        message = self.create_message(
-            context, template_id, MessageType.email, recipients
-        )
-
-        return message
-
-    def get_template_id(self, event_name):
-        match event_name:
-            case Events.on_registration:
-                return events_properties.on_registration_template_id
-
-            case _:
-                raise EventNameError
-
-    def get_template_context(self, event_name, user):
-        match event_name:
-            case Events.on_registration:
-                return self._on_registration_context(user)
-
-            case _:
-                raise EventNameError
-
-    def _on_registration_context(self, user: UserOnRegistration):
-        context = {
-            "verefy_url": user_properties.url_verify,
-            "verification_token": user.verification_token,
-        }
-        return context
-
-    def get_message_recipients(self, event_name, user):
-        match event_name:
-            case Events.on_registration:
-                return self._on_registration_recipients(user)
-
-            case _:
-                raise EventNameError
-
-    def _on_registration_recipients(self, user: UserOnRegistration):
-        return EmailTitle(
-            to_=[user.email],
-            from_=events_properties.on_registration_send_from,
-            subject_=events_properties.on_registration_subject,
-        )
-
-    def create_message(
+    def _create_message(
         self, context: dict, template_id: str, type: MessageType, recipients: list
     ) -> Message:
         return Message(
             context=context, template_id=template_id, type=type, recipients=recipients
         )
+
+    def on_registration(self, user: events.UserOnRegistration):
+        event_obj = events.RegistrationEvent()
+        context = {
+            "verefy_url": user_properties.url_verify,
+            "verification_token": user.verification_token,
+        }
+        email = EmailTitle(
+            to_=[user.email], from_=event_obj.send_from, subject=event_obj.subject
+        )
+        message = self._create_message(
+            context, event_obj.template_id, MessageType.email, recipients=email
+        )
+        return message
+
+    def on_refund(self, user: events.UserOnRefund):
+        event_obj = events.RefundEvent()
+        context = {"username": user.username, "amount": user.amount}
+        email = EmailTitle(
+            to_=[user.email], from_=event_obj.send_from, subject=event_obj.subject
+        )
+        message = self._create_message(
+            context, event_obj.template_id, MessageType.email, recipients=email
+        )
+        return message
+
+    def on_subscription(self, user: events.UserOnSubscription):
+        event_obj = events.SubscriptionEvent()
+        print(user, '!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+        context = {"username": user.username, "sub_name": user.subscription_name}
+        email = EmailTitle(
+            to_=[user.email], from_=event_obj.send_from, subject=event_obj.subject
+        )
+        message = self._create_message(
+            context, event_obj.template_id, MessageType.email, recipients=email
+        )
+        return message
+
+    def on_payment_error(self, user: events.UserOnPaymentError):
+        event_obj = events.PaymentErrorEvent()
+        context = {"username": user.username, "amount": user.amount}
+        email = EmailTitle(
+            to_=[user.email], from_=event_obj.send_from, subject=event_obj.subject
+        )
+        message = self._create_message(
+            context, event_obj.template_id, MessageType.email, recipients=email
+        )
+        return message
 
 
 @lru_cache
