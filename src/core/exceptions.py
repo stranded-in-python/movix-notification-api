@@ -16,3 +16,7 @@ class EventNameError(Error):
 
 class NOTIFICATION_NOT_FOUND(Error):
     ...
+
+
+class ObjectAlreadyExists(Error):
+    ...
